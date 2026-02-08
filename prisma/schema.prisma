@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Student {
+  id          String       @id @default(uuid())
+  userId      String       @default("legacy_user") // Will be required later
+  name        String
+  parentName  String
+  parentPhone String
+  className   String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  submissions Submission[]
+  homeworks   Homework[]   @relation("HomeworkStudents")
+  user        User         @relation(fields: [userId], references: [id])
+}
+
+model Homework {
+  id             String       @id @default(uuid())
+  userId         String       @default("legacy_user")
+  title          String
+  description    String
+  assignedDate   DateTime
+  dueDate        DateTime
+  targetClasses  String[]
+  targetStudents String[]
+  subject        String       @default("GENEL") // TURKCE, MATEMATIK, FEN
+  groupId        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  submissions    Submission[]
+  students       Student[]    @relation("HomeworkStudents")
+  user           User         @relation(fields: [userId], references: [id])
+}
+
+model Submission {
+  id         String   @id @default(uuid())
+  studentId  String
+  homeworkId String
+  status     String
+  isNotified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  homework   Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, homeworkId])
+}
+
+model UserProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique // Supabase auth user ID
+  fullName   String?
+  schoolName String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  users      User[]
+}
+
+model User {
+  id            String       @id @default(uuid())
+  email         String       @unique
+  passwordHash  String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  students      Student[]
+  homeworks     Homework[]
+  profile       UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
+}

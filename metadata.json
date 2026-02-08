@@ -1,0 +1,8 @@
+
+{
+  "name": "Ödev Takip & Veli Bilgilendirme",
+  "description": "Öğretmenler için öğrenci ödev takip sistemi. Ödevi eksik olan öğrencilerin velilerine tek tıkla WhatsApp mesajı gönderilmesini sağlar.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
