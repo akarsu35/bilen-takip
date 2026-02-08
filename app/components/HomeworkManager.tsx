@@ -5,6 +5,7 @@ import { Homework, Student, HomeworkStatus, Subject } from '@/types'
 import {
   suggestHomeworkDescription,
   generateParentMessage,
+  generateCombinedParentMessage,
 } from '@/services/geminiService'
 import toast from 'react-hot-toast'
 import StudentSearch, { turkishSearch } from './StudentSearch'
@@ -381,11 +382,44 @@ const HomeworkManager: React.FC<Props> = ({
                         {student.className} • {student.parentName}
                       </div>
                     </div>
-                    {isAllDone && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">
-                        TAMAMLANDI ✅
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {isAllDone && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">
+                          ✅
+                        </span>
+                      )}
+                      <button
+                        onClick={() => {
+                          // Gather all homework statuses for this student
+                          const homeworkItems = analyzingHomeworks.map((h) => ({
+                            subject: h.subject || 'GENEL',
+                            description: h.description,
+                            status:
+                              h.submissions[student.id] ||
+                              HomeworkStatus.PENDING,
+                          }))
+
+                          const firstHw = analyzingHomeworks[0]
+                          const message = generateCombinedParentMessage(
+                            student.name,
+                            homeworkItems,
+                            firstHw.assignedDate,
+                            firstHw.dueDate,
+                          )
+
+                          const encodedMessage = encodeURIComponent(message)
+                          const phone = student.parentPhone.startsWith('9')
+                            ? student.parentPhone
+                            : `9${student.parentPhone}`
+                          const url = `https://wa.me/${phone}?text=${encodedMessage}`
+                          window.open(url, '_blank')
+                        }}
+                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-sm"
+                      >
+                        <i className="fab fa-whatsapp"></i>
+                        Toplu Bildir
+                      </button>
+                    </div>
                   </div>
 
                   {/* List of Homeworks for this Student */}

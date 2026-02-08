@@ -158,3 +158,90 @@ export async function suggestHomeworkDescription(title: string) {
     return ''
   }
 }
+
+interface HomeworkStatusItem {
+  subject: string
+  description: string
+  status: string
+}
+
+export function generateCombinedParentMessage(
+  studentName: string,
+  homeworkItems: HomeworkStatusItem[],
+  assignedDate?: string | Date,
+  dueDate?: string | Date,
+  schoolName?: string,
+  teacherSubject?: string,
+  userName?: string,
+): string {
+  const signature =
+    schoolName || teacherSubject || userName
+      ? `\n\n${schoolName || ''} ${teacherSubject ? `- ${teacherSubject}` : ''} ${userName ? `- ${userName}` : ''}`
+      : ''
+
+  // Format dates
+  let dateInfo = ''
+  if (assignedDate && dueDate) {
+    const a = new Date(assignedDate).toLocaleDateString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+    })
+    const d = new Date(dueDate).toLocaleDateString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+    })
+    dateInfo = `${a} - ${d} tarihli`
+  }
+
+  // Subject name mapping
+  const getSubjectName = (code: string) => {
+    if (code === 'MATEMATIK') return 'Matematik'
+    if (code === 'TURKCE') return 'Türkçe'
+    if (code === 'FEN') return 'Fen Bilimleri'
+    return code
+  }
+
+  // Build status lines with emojis
+  const statusLines = homeworkItems.map((item) => {
+    const subjectName = getSubjectName(item.subject)
+    let emoji = '⏳'
+    let statusText = 'Bekliyor'
+
+    if (item.status === 'DONE') {
+      emoji = '✅'
+      statusText = 'Tamamlandı'
+    } else if (item.status === 'MISSING') {
+      emoji = '❌'
+      statusText = 'Yapılmadı'
+    } else if (item.status === 'INCOMPLETE') {
+      emoji = '⚠️'
+      statusText = 'Eksik'
+    } else if (item.status === 'ABSENT') {
+      emoji = '📦'
+      statusText = 'Getirmedi'
+    }
+
+    return `${emoji} ${subjectName}: "${item.description}" - ${statusText}`
+  })
+
+  // Count issues
+  const doneCount = homeworkItems.filter((i) => i.status === 'DONE').length
+  const issueCount = homeworkItems.length - doneCount
+
+  // Generate appropriate closing message
+  let closingMessage = ''
+  if (issueCount === 0) {
+    closingMessage = `Tüm ödevlerini eksiksiz tamamladığını gördüm. Gösterdiği gayret için ${studentName}'i tebrik ederim. Desteğiniz için teşekkürler.`
+  } else if (doneCount === 0) {
+    closingMessage = `Ödevlerin tamamlanması konusunda ${studentName}'e destek olmanızı rica ederim.`
+  } else {
+    closingMessage = `Eksik/yapılmamış ödevlerin tamamlanması konusunda ${studentName}'e destek olmanızı rica ederim.`
+  }
+
+  return `Sayın Velimiz, ${studentName}'in ${dateInfo} ödevlerini kontrol ettiğimde:
+
+${statusLines.join('\n')}
+
+${closingMessage}
+İyi günler dilerim.${signature}`
+}
