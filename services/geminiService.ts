@@ -238,7 +238,7 @@ export function generateCombinedParentMessage(
     closingMessage = `Eksik/yapılmamış ek kaynak ödevlerinin tamamlanması konusunda ${studentName}'e destek olmanızı rica ederim.`
   }
 
-  return `Sayın Velimiz, ${studentName}'in ${dateInfo} ödevlerini kontrol ettiğimde:
+  return `Sayın Velimiz, ${studentName}'in ${dateInfo} ek kaynak ödevlerini kontrol ettiğimde:
 
 ${statusLines.join('\n')}
 
