@@ -941,14 +941,40 @@ const HomeworkManager: React.FC<Props> = ({
                                         <button
                                           onClick={(e) => {
                                             e.preventDefault()
-                                            setAnalyzingHomeworkIds(
-                                              group.map((h) => h.id),
-                                            ) // Analyze the whole group
+                                            // Gather all homework statuses for this student's group
+                                            const homeworkItems = group.map(
+                                              (h) => ({
+                                                subject: h.subject || 'GENEL',
+                                                description: h.description,
+                                                status:
+                                                  h.submissions[studentId] ||
+                                                  HomeworkStatus.PENDING,
+                                              }),
+                                            )
+
+                                            const message =
+                                              generateCombinedParentMessage(
+                                                studentName,
+                                                homeworkItems,
+                                                first.assignedDate,
+                                                first.dueDate,
+                                              )
+
+                                            const encodedMessage =
+                                              encodeURIComponent(message)
+                                            const phone =
+                                              student?.parentPhone?.startsWith(
+                                                '9',
+                                              )
+                                                ? student.parentPhone
+                                                : `9${student?.parentPhone || ''}`
+                                            const url = `https://wa.me/${phone}?text=${encodedMessage}`
+                                            window.open(url, '_blank')
                                           }}
-                                          className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold hover:bg-indigo-700 transition"
+                                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1"
                                         >
-                                          <i className="fas fa-chart-pie mr-1"></i>
-                                          Tüm Grubu Kontrol Et
+                                          <i className="fab fa-whatsapp"></i>
+                                          Toplu Bildir
                                         </button>
                                         <button
                                           onClick={(e) => {
