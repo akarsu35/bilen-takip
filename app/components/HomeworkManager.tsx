@@ -40,10 +40,10 @@ const HomeworkManager: React.FC<Props> = ({
   const [targetStudentIds, setTargetStudentIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isSuggesting, setIsSuggesting] = useState(false)
-  const [analyzingHomeworks, setAnalyzingHomeworks] = useState<
-    Homework[] | null
+  const [analyzingHomeworkIds, setAnalyzingHomeworkIds] = useState<
+    string[] | null
   >(null)
-  /* Deprecated: analyzingHomework derived state replaced by analyzingHomeworks array */
+  /* Deprecated: analyzingHomework derived state replaced by analyzingHomeworkIds array */
   const [analysisFilter, setAnalysisFilter] = useState<string>('ALL')
   const [analysisSearchTerm, setAnalysisSearchTerm] = useState<string>('')
   const [subjectFilter, setSubjectFilter] = useState<string>('ALL')
@@ -157,6 +157,11 @@ const HomeworkManager: React.FC<Props> = ({
   }
 
   // Analysis View Implementation
+  // Derive fresh homework data from IDs to ensure updates are reflected
+  const analyzingHomeworks = analyzingHomeworkIds
+    ? homeworks.filter((h) => analyzingHomeworkIds.includes(h.id))
+    : null
+
   if (analyzingHomeworks && analyzingHomeworks.length > 0) {
     // Collect all unique target student IDs from all homeworks
     const allTargetStudentIds = new Set<string>()
@@ -268,7 +273,7 @@ const HomeworkManager: React.FC<Props> = ({
             <p className="text-sm text-gray-500">{viewDesc}</p>
           </div>
           <button
-            onClick={() => setAnalyzingHomeworks(null)}
+            onClick={() => setAnalyzingHomeworkIds(null)}
             className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg"
           >
             Geri Dön
@@ -902,7 +907,9 @@ const HomeworkManager: React.FC<Props> = ({
                                         <button
                                           onClick={(e) => {
                                             e.preventDefault()
-                                            setAnalyzingHomeworks(group) // Analyze the whole group
+                                            setAnalyzingHomeworkIds(
+                                              group.map((h) => h.id),
+                                            ) // Analyze the whole group
                                           }}
                                           className="bg-indigo-600 text-white px-3 py-1 rounded-full text-xs font-bold hover:bg-indigo-700 transition"
                                         >
@@ -1228,7 +1235,7 @@ const HomeworkManager: React.FC<Props> = ({
                       </div>
                       <div className="flex flex-col gap-2">
                         <button
-                          onClick={() => setAnalyzingHomeworks([h])} // Single HW analysis
+                          onClick={() => setAnalyzingHomeworkIds([h.id])} // Single HW analysis
                           className="text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors"
                           title="Analiz Et"
                         >
