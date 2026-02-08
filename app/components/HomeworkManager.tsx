@@ -388,37 +388,55 @@ const HomeworkManager: React.FC<Props> = ({
                           ✅
                         </span>
                       )}
-                      <button
-                        onClick={() => {
-                          // Gather all homework statuses for this student
-                          const homeworkItems = analyzingHomeworks.map((h) => ({
-                            subject: h.subject || 'GENEL',
-                            description: h.description,
-                            status:
-                              h.submissions[student.id] ||
-                              HomeworkStatus.PENDING,
-                          }))
+                      {(() => {
+                        const groupKey = `analysis-${student.id}-${analyzingHomeworkIds?.join('-')}`
+                        const isSent = sentMessages.has(groupKey)
 
-                          const firstHw = analyzingHomeworks[0]
-                          const message = generateCombinedParentMessage(
-                            student.name,
-                            homeworkItems,
-                            firstHw.assignedDate,
-                            firstHw.dueDate,
-                          )
+                        return (
+                          <button
+                            onClick={() => {
+                              // Gather all homework statuses for this student
+                              const homeworkItems = analyzingHomeworks.map(
+                                (h) => ({
+                                  subject: h.subject || 'GENEL',
+                                  description: h.description,
+                                  status:
+                                    h.submissions[student.id] ||
+                                    HomeworkStatus.PENDING,
+                                }),
+                              )
 
-                          const encodedMessage = encodeURIComponent(message)
-                          const phone = student.parentPhone.startsWith('9')
-                            ? student.parentPhone
-                            : `9${student.parentPhone}`
-                          const url = `https://wa.me/${phone}?text=${encodedMessage}`
-                          window.open(url, '_blank')
-                        }}
-                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-sm"
-                      >
-                        <i className="fab fa-whatsapp"></i>
-                        Toplu Bildir
-                      </button>
+                              const firstHw = analyzingHomeworks[0]
+                              const message = generateCombinedParentMessage(
+                                student.name,
+                                homeworkItems,
+                                firstHw.assignedDate,
+                                firstHw.dueDate,
+                              )
+
+                              const encodedMessage = encodeURIComponent(message)
+                              const phone = student.parentPhone.startsWith('9')
+                                ? student.parentPhone
+                                : `9${student.parentPhone}`
+                              const url = `https://wa.me/${phone}?text=${encodedMessage}`
+                              window.open(url, '_blank')
+
+                              // Mark as sent
+                              setSentMessages(
+                                new Set([...sentMessages, groupKey]),
+                              )
+                            }}
+                            className={`${
+                              isSent
+                                ? 'bg-orange-500 hover:bg-orange-600'
+                                : 'bg-green-500 hover:bg-green-600'
+                            } text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition shadow-sm`}
+                          >
+                            <i className="fab fa-whatsapp"></i>
+                            {isSent ? 'Tekrar Bildir' : 'Toplu Bildir'}
+                          </button>
+                        )
+                      })()}
                     </div>
                   </div>
 
@@ -938,44 +956,69 @@ const HomeworkManager: React.FC<Props> = ({
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-3">
-                                        <button
-                                          onClick={(e) => {
-                                            e.preventDefault()
-                                            // Gather all homework statuses for this student's group
-                                            const homeworkItems = group.map(
-                                              (h) => ({
-                                                subject: h.subject || 'GENEL',
-                                                description: h.description,
-                                                status:
-                                                  h.submissions[studentId] ||
-                                                  HomeworkStatus.PENDING,
-                                              }),
-                                            )
+                                        {(() => {
+                                          const groupKey = `group-${studentId}-${groupId}`
+                                          const isSent =
+                                            sentMessages.has(groupKey)
 
-                                            const message =
-                                              generateCombinedParentMessage(
-                                                studentName,
-                                                homeworkItems,
-                                                first.assignedDate,
-                                                first.dueDate,
-                                              )
+                                          return (
+                                            <button
+                                              onClick={(e) => {
+                                                e.preventDefault()
+                                                // Gather all homework statuses for this student's group
+                                                const homeworkItems = group.map(
+                                                  (h) => ({
+                                                    subject:
+                                                      h.subject || 'GENEL',
+                                                    description: h.description,
+                                                    status:
+                                                      h.submissions[
+                                                        studentId
+                                                      ] ||
+                                                      HomeworkStatus.PENDING,
+                                                  }),
+                                                )
 
-                                            const encodedMessage =
-                                              encodeURIComponent(message)
-                                            const phone =
-                                              student?.parentPhone?.startsWith(
-                                                '9',
-                                              )
-                                                ? student.parentPhone
-                                                : `9${student?.parentPhone || ''}`
-                                            const url = `https://wa.me/${phone}?text=${encodedMessage}`
-                                            window.open(url, '_blank')
-                                          }}
-                                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1"
-                                        >
-                                          <i className="fab fa-whatsapp"></i>
-                                          Toplu Bildir
-                                        </button>
+                                                const message =
+                                                  generateCombinedParentMessage(
+                                                    studentName,
+                                                    homeworkItems,
+                                                    first.assignedDate,
+                                                    first.dueDate,
+                                                  )
+
+                                                const encodedMessage =
+                                                  encodeURIComponent(message)
+                                                const phone =
+                                                  student?.parentPhone?.startsWith(
+                                                    '9',
+                                                  )
+                                                    ? student.parentPhone
+                                                    : `9${student?.parentPhone || ''}`
+                                                const url = `https://wa.me/${phone}?text=${encodedMessage}`
+                                                window.open(url, '_blank')
+
+                                                // Mark as sent
+                                                setSentMessages(
+                                                  new Set([
+                                                    ...sentMessages,
+                                                    groupKey,
+                                                  ]),
+                                                )
+                                              }}
+                                              className={`${
+                                                isSent
+                                                  ? 'bg-orange-500 hover:bg-orange-600'
+                                                  : 'bg-green-500 hover:bg-green-600'
+                                              } text-white px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1`}
+                                            >
+                                              <i className="fab fa-whatsapp"></i>
+                                              {isSent
+                                                ? 'Tekrar Bildir'
+                                                : 'Toplu Bildir'}
+                                            </button>
+                                          )
+                                        })()}
                                         <button
                                           onClick={(e) => {
                                             e.preventDefault() // Prevent accordion toggle
