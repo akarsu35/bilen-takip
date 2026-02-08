@@ -1,22 +1,18 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/utils/supabase/server'
+import { getSession } from '@/lib/session'
 import { getPrisma } from '@/services/prisma'
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const session = await getSession()
 
-    if (authError || !user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const prisma = await getPrisma()
     const profile = await prisma.userProfile.findUnique({
-      where: { userId: user.id },
+      where: { userId: session.user.id },
     })
 
     return NextResponse.json({ profile })
@@ -31,13 +27,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const session = await getSession()
 
-    if (authError || !user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -46,15 +38,17 @@ export async function POST(request: Request) {
 
     const prisma = await getPrisma()
     const profile = await prisma.userProfile.upsert({
-      where: { userId: user.id },
+      where: { userId: session.user.id },
       update: {
         fullName: fullName || null,
         schoolName: schoolName || null,
+        subject: subject || null,
       },
       create: {
-        userId: user.id,
+        userId: session.user.id,
         fullName: fullName || null,
         schoolName: schoolName || null,
+        subject: subject || null,
       },
     })
 
