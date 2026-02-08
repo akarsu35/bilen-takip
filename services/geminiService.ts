@@ -231,11 +231,11 @@ export function generateCombinedParentMessage(
   // Generate appropriate closing message
   let closingMessage = ''
   if (issueCount === 0) {
-    closingMessage = `Tüm ödevlerini eksiksiz tamamladığını gördüm. Gösterdiği gayret için ${studentName}'i tebrik ederim. Desteğiniz için teşekkürler.`
+    closingMessage = `Tüm ek kaynak ödevlerini eksiksiz tamamladığını gördüm. Gösterdiği gayret için ${studentName}'i tebrik ederim. Desteğiniz için teşekkürler.`
   } else if (doneCount === 0) {
-    closingMessage = `Ödevlerin tamamlanması konusunda ${studentName}'e destek olmanızı rica ederim.`
+    closingMessage = `Ek kaynak ödevlerinin tamamlanması konusunda ${studentName}'e destek olmanızı rica ederim.`
   } else {
-    closingMessage = `Eksik/yapılmamış ödevlerin tamamlanması konusunda ${studentName}'e destek olmanızı rica ederim.`
+    closingMessage = `Eksik/yapılmamış ek kaynak ödevlerinin tamamlanması konusunda ${studentName}'e destek olmanızı rica ederim.`
   }
 
   return `Sayın Velimiz, ${studentName}'in ${dateInfo} ödevlerini kontrol ettiğimde:
