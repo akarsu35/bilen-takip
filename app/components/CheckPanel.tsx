@@ -310,7 +310,9 @@ const CheckPanel: React.FC<Props> = ({
                       onUpdateStatus(
                         selectedHwId,
                         student.id,
-                        HomeworkStatus.DONE,
+                        status === HomeworkStatus.DONE
+                          ? HomeworkStatus.PENDING
+                          : HomeworkStatus.DONE,
                       )
                     }
                   />
@@ -323,7 +325,9 @@ const CheckPanel: React.FC<Props> = ({
                       onUpdateStatus(
                         selectedHwId,
                         student.id,
-                        HomeworkStatus.MISSING,
+                        status === HomeworkStatus.MISSING
+                          ? HomeworkStatus.PENDING
+                          : HomeworkStatus.MISSING,
                       )
                     }
                   />
@@ -336,7 +340,9 @@ const CheckPanel: React.FC<Props> = ({
                       onUpdateStatus(
                         selectedHwId,
                         student.id,
-                        HomeworkStatus.INCOMPLETE,
+                        status === HomeworkStatus.INCOMPLETE
+                          ? HomeworkStatus.PENDING
+                          : HomeworkStatus.INCOMPLETE,
                       )
                     }
                   />
@@ -349,7 +355,9 @@ const CheckPanel: React.FC<Props> = ({
                       onUpdateStatus(
                         selectedHwId,
                         student.id,
-                        HomeworkStatus.ABSENT,
+                        status === HomeworkStatus.ABSENT
+                          ? HomeworkStatus.PENDING
+                          : HomeworkStatus.ABSENT,
                       )
                     }
                   />
