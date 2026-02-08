@@ -1,0 +1,14 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/auth/login/route": "/api/auth/login",
+  "/api/ai/route": "/api/ai",
+  "/api/auth/logout/route": "/api/auth/logout",
+  "/api/auth/register/route": "/api/auth/register",
+  "/api/student/route": "/api/student",
+  "/auth/callback/route": "/auth/callback",
+  "/api/auth/me/route": "/api/auth/me",
+  "/api/state/route": "/api/state",
+  "/api/profile/route": "/api/profile",
+  "/page": "/",
+  "/login/page": "/login"
+}

@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server'
 import { getPrisma } from '@/services/prisma'
-import { createClient } from '@/utils/supabase/server'
+import { getSession } from '@/lib/session'
 
 export async function DELETE(req: Request) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const session = await getSession()
 
-  if (!user) {
+  if (!session?.user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const user = session.user
 
   const { searchParams } = new URL(req.url)
   const id = searchParams.get('id')
