@@ -60,6 +60,7 @@ export async function GET() {
         parentName: s.parentName,
         parentPhone: s.parentPhone,
         className: s.className,
+        bookDay: s.bookDay || null,
       })),
       homeworks: convertedHomeworks,
     })
@@ -97,9 +98,6 @@ export async function POST(req: Request) {
   try {
     const state = await req.json()
     const students = state.students || []
-
-    // Safety check: ensure we don't accidentally take IDs from other users if UUID collision (unlikely)
-    // but mainly ensure we are Operating on the User's Scope.
 
     // Transaction for atomic update
     await p.$transaction(
@@ -139,15 +137,14 @@ export async function POST(req: Request) {
                 parentName: s.parentName,
                 parentPhone: s.parentPhone,
                 className: s.className,
+                bookDay: s.bookDay || null,
               },
               update: {
-                // Ensure we don't overwrite userId or allow claiming other's student if ID leaked (though ID is UUID)
-                // Since 'where' is unique ID, if it exists, it updates.
-                // We should ideally check ownership. But for simplicity in this atomic sync:
                 name: s.name,
                 parentName: s.parentName,
                 parentPhone: s.parentPhone,
                 className: s.className,
+                bookDay: s.bookDay || null,
               },
             }),
           ),

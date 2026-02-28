@@ -240,35 +240,46 @@ const PersonalizedHomeworkModal: React.FC<Props> = ({
                       </button>
                     </div>
                   ) : (
-                    <label
-                      className={`text-sm font-bold flex items-center gap-2 ${
-                        row.subject === 'TURKCE'
-                          ? 'text-red-600'
-                          : row.subject === 'MATEMATIK'
-                            ? 'text-blue-600'
-                            : row.subject === 'FEN'
-                              ? 'text-green-600'
-                              : 'text-gray-700'
-                      }`}
-                    >
-                      {row.subject === 'TURKCE' && (
-                        <>
-                          <i className="fas fa-book"></i> TÜRKÇE
-                        </>
-                      )}
-                      {row.subject === 'MATEMATIK' && (
-                        <>
-                          <i className="fas fa-calculator"></i> MATEMATİK
-                        </>
-                      )}
-                      {row.subject === 'FEN' && (
-                        <>
-                          <i className="fas fa-flask"></i> FEN BİLİMLERİ
-                        </>
-                      )}
-                      {!['TURKCE', 'MATEMATIK', 'FEN'].includes(row.subject) &&
-                        row.subject}
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label
+                        className={`text-sm font-bold flex items-center gap-2 ${
+                          row.subject === 'TURKCE'
+                            ? 'text-red-600'
+                            : row.subject === 'MATEMATIK'
+                              ? 'text-blue-600'
+                              : row.subject === 'FEN'
+                                ? 'text-green-600'
+                                : 'text-gray-700'
+                        }`}
+                      >
+                        {row.subject === 'TURKCE' && (
+                          <>
+                            <i className="fas fa-book"></i> TÜRKÇE
+                          </>
+                        )}
+                        {row.subject === 'MATEMATIK' && (
+                          <>
+                            <i className="fas fa-calculator"></i> MATEMATİK
+                          </>
+                        )}
+                        {row.subject === 'FEN' && (
+                          <>
+                            <i className="fas fa-flask"></i> FEN BİLİMLERİ
+                          </>
+                        )}
+                        {!['TURKCE', 'MATEMATIK', 'FEN'].includes(
+                          row.subject,
+                        ) && row.subject}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removeRow(row.id)}
+                        className="text-gray-400 hover:text-red-500 p-1"
+                        title="Dersi Sil"
+                      >
+                        <i className="fas fa-trash-alt"></i>
+                      </button>
+                    </div>
                   )}
 
                   <textarea

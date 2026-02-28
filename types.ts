@@ -4,6 +4,7 @@ export interface Student {
   parentName: string
   parentPhone: string
   className: string // Örn: "8/A", "6/B"
+  bookDay?: string // 'PAZARTESI', 'SALI', 'CARSAMBA', 'PERSEMBE', 'CUMA'
 }
 
 export enum HomeworkStatus {

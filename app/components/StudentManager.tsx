@@ -27,6 +27,7 @@ const StudentManager: React.FC<Props> = ({
   const [parentName, setParentName] = useState('')
   const [parentPhone, setParentPhone] = useState('')
   const [className, setClassName] = useState('')
+  const [bookDay, setBookDay] = useState('')
 
   // Get unique existing classes for auto-suggestion
   const existingClasses = Array.from(
@@ -39,6 +40,7 @@ const StudentManager: React.FC<Props> = ({
     setParentName(student.parentName)
     setParentPhone(student.parentPhone)
     setClassName(student.className)
+    setBookDay(student.bookDay || '')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -48,6 +50,7 @@ const StudentManager: React.FC<Props> = ({
     setParentName('')
     setParentPhone('')
     setClassName('')
+    setBookDay('')
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -64,6 +67,7 @@ const StudentManager: React.FC<Props> = ({
         parentName,
         parentPhone: cleanedPhone,
         className: className.toUpperCase(),
+        bookDay: bookDay || undefined,
       })
       toast.success('Öğrenci bilgileri güncellendi 👤')
       handleCancel()
@@ -74,12 +78,14 @@ const StudentManager: React.FC<Props> = ({
         parentName,
         parentPhone: cleanedPhone,
         className: className.toUpperCase(),
+        bookDay: bookDay || undefined,
       })
       toast.success('Yeni öğrenci eklendi 🎓')
 
       setName('')
       setParentName('')
       setParentPhone('')
+      setBookDay('')
       // Keep className selected for faster entry of next student in same class
     }
   }
@@ -227,6 +233,18 @@ const StudentManager: React.FC<Props> = ({
             onChange={(e) => setParentPhone(e.target.value)}
             required
           />
+          <select
+            value={bookDay}
+            onChange={(e) => setBookDay(e.target.value)}
+            className="w-full md:col-span-2 p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-slate-700"
+          >
+            <option value="">📅 Kitap Günü Seçin (opsiyonel)</option>
+            <option value="PAZARTESI">Pazartesi</option>
+            <option value="SALI">Salı</option>
+            <option value="CARSAMBA">Çarşamba</option>
+            <option value="PERSEMBE">Perşembe</option>
+            <option value="CUMA">Cuma</option>
+          </select>
           <button
             type="submit"
             className={`w-full md:col-span-2 text-white p-3 rounded-lg hover:opacity-90 transition font-medium ${
@@ -303,6 +321,21 @@ const StudentManager: React.FC<Props> = ({
                         {s.className}
                       </span>
                       <h3 className="font-medium text-slate-900">{s.name}</h3>
+                      {s.bookDay && (
+                        <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                          {s.bookDay === 'PAZARTESI'
+                            ? 'Pzt'
+                            : s.bookDay === 'SALI'
+                              ? 'Sal'
+                              : s.bookDay === 'CARSAMBA'
+                                ? 'Çar'
+                                : s.bookDay === 'PERSEMBE'
+                                  ? 'Per'
+                                  : s.bookDay === 'CUMA'
+                                    ? 'Cum'
+                                    : s.bookDay}
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-slate-500">
                       Veli: {s.parentName} • {s.parentPhone}

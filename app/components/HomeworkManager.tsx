@@ -10,6 +10,7 @@ import {
 import toast from 'react-hot-toast'
 import StudentSearch, { turkishSearch } from './StudentSearch'
 import PersonalizedHomeworkModal from './PersonalizedHomeworkModal'
+import WeeklyHomeworkModal from './WeeklyHomeworkModal'
 
 interface Props {
   homeworks: Homework[]
@@ -50,6 +51,9 @@ const HomeworkManager: React.FC<Props> = ({
   const [subjectFilter, setSubjectFilter] = useState<string>('ALL')
   const [homeworkSearchTerm, setHomeworkSearchTerm] = useState('')
   const [showPersonalizedModal, setShowPersonalizedModal] = useState(false)
+  const [showWeeklyModal, setShowWeeklyModal] = useState(false)
+  const [showDayPanel, setShowDayPanel] = useState(false)
+  const [openDays, setOpenDays] = useState<string[]>([])
 
   const existingClasses = useMemo(
     () => Array.from(new Set(students.map((s) => s.className))).sort(),
@@ -570,7 +574,65 @@ const HomeworkManager: React.FC<Props> = ({
     )
   }
 
+  const handleWeeklyAdd = (newHomeworks: Homework[]) => {
+    newHomeworks.forEach((h) => onAdd(h))
+    toast.success(`${newHomeworks.length} adet haftalık ödev oluşturuldu! 📅`)
+  }
+
   // Main Form and List View
+
+  const DAY_PANEL_CONFIG = [
+    {
+      code: 'PAZARTESI',
+      label: 'Pazartesi',
+      headerCls: 'bg-purple-50 border-purple-200 text-purple-700',
+      dotCls: 'bg-purple-500',
+    },
+    {
+      code: 'SALI',
+      label: 'Salı',
+      headerCls: 'bg-blue-50 border-blue-200 text-blue-700',
+      dotCls: 'bg-blue-500',
+    },
+    {
+      code: 'CARSAMBA',
+      label: 'Çarşamba',
+      headerCls: 'bg-teal-50 border-teal-200 text-teal-700',
+      dotCls: 'bg-teal-500',
+    },
+    {
+      code: 'PERSEMBE',
+      label: 'Perşembe',
+      headerCls: 'bg-orange-50 border-orange-200 text-orange-700',
+      dotCls: 'bg-orange-500',
+    },
+    {
+      code: 'CUMA',
+      label: 'Cuma',
+      headerCls: 'bg-pink-50 border-pink-200 text-pink-700',
+      dotCls: 'bg-pink-500',
+    },
+    {
+      code: '',
+      label: 'Gün Atanmamış',
+      headerCls: 'bg-gray-50 border-gray-200 text-gray-500',
+      dotCls: 'bg-gray-400',
+    },
+  ]
+
+  const groupedByDay = DAY_PANEL_CONFIG.map((day) => ({
+    ...day,
+    students: students.filter((s) =>
+      day.code === '' ? !s.bookDay : s.bookDay === day.code,
+    ),
+  })).filter((g) => g.students.length > 0)
+
+  const toggleDay = (code: string) => {
+    setOpenDays((prev) =>
+      prev.includes(code) ? prev.filter((d) => d !== code) : [...prev, code],
+    )
+  }
+
   return (
     <div className="space-y-6">
       <form
@@ -584,10 +646,18 @@ const HomeworkManager: React.FC<Props> = ({
         <button
           type="button"
           onClick={() => setShowPersonalizedModal(true)}
-          className="w-full bg-indigo-50 border-2 border-dashed border-indigo-200 text-indigo-700 p-3 rounded-lg hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2 font-bold mb-4"
+          className="w-full bg-indigo-50 border-2 border-dashed border-indigo-200 text-indigo-700 p-3 rounded-lg hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2 font-bold mb-2"
         >
           <i className="fas fa-user-pen text-xl"></i>
           KİŞİYE ÖZEL HIZLI ÖDEV EKLE
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowWeeklyModal(true)}
+          className="w-full bg-amber-50 border-2 border-dashed border-amber-200 text-amber-700 p-3 rounded-lg hover:bg-amber-100 transition-colors flex items-center justify-center gap-2 font-bold mb-4"
+        >
+          <i className="fas fa-calendar-week text-xl"></i>
+          HAFTALIK ÖDEV ATA (KİTAP GÜNÜ)
         </button>
 
         {/* Title Input */}
@@ -700,46 +770,152 @@ const HomeworkManager: React.FC<Props> = ({
         </div>
 
         {/* Target Student Selection (Optional) */}
-        {targetClasses.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Öğrenci Seçimi (Tüm sınıf için boş bırakın)
-            </label>
-            <div className="max-h-40 overflow-y-auto border rounded-md p-2 grid grid-cols-2 md:grid-cols-3 gap-2">
-              {availableStudents.map((student) => (
-                <div
-                  key={student.id}
-                  onClick={() => toggleStudent(student.id)}
-                  className={`cursor-pointer p-2 rounded text-sm flex items-center gap-2 ${
-                    targetStudentIds.includes(student.id)
-                      ? 'bg-indigo-50 border border-indigo-200'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <div
-                    className={`w-4 h-4 rounded border flex items-center justify-center ${
-                      targetStudentIds.includes(student.id)
-                        ? 'bg-indigo-600 border-indigo-600'
-                        : 'border-gray-300'
-                    }`}
-                  >
-                    {targetStudentIds.includes(student.id) && (
-                      <i className="fas fa-check text-white text-xs"></i>
-                    )}
-                  </div>
-                  <span className="truncate">
-                    {student.name} ({student.className})
+        {targetClasses.length > 0 &&
+          (() => {
+            const DAY_CONFIG = [
+              {
+                code: 'PAZARTESI',
+                label: 'Pazartesi',
+                headerCls: 'bg-purple-100 text-purple-700',
+                dotCls: 'bg-purple-500',
+              },
+              {
+                code: 'SALI',
+                label: 'Salı',
+                headerCls: 'bg-blue-100 text-blue-700',
+                dotCls: 'bg-blue-500',
+              },
+              {
+                code: 'CARSAMBA',
+                label: 'Çarşamba',
+                headerCls: 'bg-teal-100 text-teal-700',
+                dotCls: 'bg-teal-500',
+              },
+              {
+                code: 'PERSEMBE',
+                label: 'Perşembe',
+                headerCls: 'bg-orange-100 text-orange-700',
+                dotCls: 'bg-orange-500',
+              },
+              {
+                code: 'CUMA',
+                label: 'Cuma',
+                headerCls: 'bg-pink-100 text-pink-700',
+                dotCls: 'bg-pink-500',
+              },
+              {
+                code: '',
+                label: 'Diğer',
+                headerCls: 'bg-gray-100 text-gray-600',
+                dotCls: 'bg-gray-400',
+              },
+            ]
+
+            const grouped = DAY_CONFIG.map((day) => ({
+              ...day,
+              students: availableStudents.filter((s) =>
+                day.code === '' ? !s.bookDay : s.bookDay === day.code,
+              ),
+            })).filter((g) => g.students.length > 0)
+
+            const toggleGroup = (ids: string[]) => {
+              const allSelected = ids.every((id) =>
+                targetStudentIds.includes(id),
+              )
+              if (allSelected) {
+                setTargetStudentIds((prev) =>
+                  prev.filter((id) => !ids.includes(id)),
+                )
+              } else {
+                setTargetStudentIds((prev) => [...new Set([...prev, ...ids])])
+              }
+            }
+
+            return (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Öğrenci Seçimi{' '}
+                  <span className="text-gray-400">
+                    (Tüm sınıf için boş bırakın)
                   </span>
+                </label>
+                <div className="border rounded-lg overflow-hidden max-h-64 overflow-y-auto divide-y divide-gray-100">
+                  {grouped.map((group) => {
+                    const groupIds = group.students.map((s) => s.id)
+                    const allChecked = groupIds.every((id) =>
+                      targetStudentIds.includes(id),
+                    )
+                    const someChecked = groupIds.some((id) =>
+                      targetStudentIds.includes(id),
+                    )
+                    return (
+                      <div key={group.code}>
+                        {/* Day header */}
+                        <div
+                          className={`flex items-center justify-between px-3 py-1.5 ${group.headerCls}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-2 h-2 rounded-full ${group.dotCls}`}
+                            ></span>
+                            <span className="text-xs font-bold uppercase tracking-wide">
+                              {group.label}
+                            </span>
+                            <span className="text-xs opacity-60">
+                              ({group.students.length})
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => toggleGroup(groupIds)}
+                            className="text-xs underline opacity-70 hover:opacity-100"
+                          >
+                            {allChecked
+                              ? 'Kaldır'
+                              : someChecked
+                                ? 'Tümünü Seç'
+                                : 'Seç'}
+                          </button>
+                        </div>
+                        {/* Students */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-1 p-2">
+                          {group.students.map((student) => (
+                            <div
+                              key={student.id}
+                              onClick={() => toggleStudent(student.id)}
+                              className={`cursor-pointer p-2 rounded text-sm flex items-center gap-2 transition-colors ${
+                                targetStudentIds.includes(student.id)
+                                  ? 'bg-indigo-50 border border-indigo-200'
+                                  : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <div
+                                className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                                  targetStudentIds.includes(student.id)
+                                    ? 'bg-indigo-600 border-indigo-600'
+                                    : 'border-gray-300'
+                                }`}
+                              >
+                                {targetStudentIds.includes(student.id) && (
+                                  <i className="fas fa-check text-white text-xs"></i>
+                                )}
+                              </div>
+                              <span className="truncate">{student.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {targetStudentIds.length === 0
-                ? 'Tüm sınıftaki öğrencilere atanacak.'
-                : `${targetStudentIds.length} öğrenci seçildi.`}
-            </div>
-          </div>
-        )}
+                <div className="text-xs text-gray-500 mt-1">
+                  {targetStudentIds.length === 0
+                    ? 'Tüm sınıftaki öğrencilere atanacak.'
+                    : `${targetStudentIds.length} öğrenci seçildi.`}
+                </div>
+              </div>
+            )
+          })()}
 
         {/* Due Date */}
         <div>
@@ -825,454 +1001,305 @@ const HomeworkManager: React.FC<Props> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          {homeworks.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-              Henüz ödev oluşturulmamış.
-            </div>
-          ) : (
-            <>
-              {/* Grouped Homeworks - Nested Structure */}
-              {Object.entries(
-                homeworks
-                  .filter(
-                    (h) =>
-                      (subjectFilter === 'ALL' ||
-                        h.subject === subjectFilter) &&
-                      h.groupId &&
-                      h.targetStudentIds &&
-                      h.targetStudentIds.length > 0,
-                  )
-                  .reduce(
-                    (acc, h) => {
-                      const sId = h.targetStudentIds![0]
-                      if (!acc[sId]) acc[sId] = []
-                      acc[sId].push(h)
-                      return acc
-                    },
-                    {} as Record<string, Homework[]>,
-                  ),
-              )
-                .filter(([studentId, _]) => {
-                  if (!homeworkSearchTerm) return true
-                  const student = students.find((s) => s.id === studentId)
-                  if (!student) return false
-                  return (
-                    turkishSearch(student.name, homeworkSearchTerm) ||
-                    turkishSearch(student.parentName, homeworkSearchTerm)
-                  )
-                })
-                .map(([studentId, studentAllHomeworks]) => {
-                  const student = students.find((s) => s.id === studentId)
-                  const studentName = student?.name || 'Bilinmeyen Öğrenci'
 
-                  // Group by GroupId within student
-                  const studentGroups = studentAllHomeworks.reduce(
-                    (acc, h) => {
-                      if (!acc[h.groupId!]) acc[h.groupId!] = []
-                      acc[h.groupId!].push(h)
-                      return acc
-                    },
-                    {} as Record<string, Homework[]>,
-                  )
+        {/* Day-grouped homework list */}
+        {(() => {
+          // Build per-student homework map (filtered)
+          const filteredBySubject = homeworks.filter(
+            (h) =>
+              (subjectFilter === 'ALL' || h.subject === subjectFilter) &&
+              h.groupId &&
+              h.targetStudentIds &&
+              h.targetStudentIds.length > 0,
+          )
 
-                  const activeGroupsCount = Object.keys(studentGroups).length
+          if (homeworks.length === 0) {
+            return (
+              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                Henüz ödev oluşturulmamış.
+              </div>
+            )
+          }
 
-                  // Check if ALL homeworks for this student are done (optional visual cue)
-                  const isStudentAllDone = studentAllHomeworks.every(
-                    (h) => h.submissions[studentId] === HomeworkStatus.DONE,
-                  )
+          const byStudent = filteredBySubject.reduce(
+            (acc: Record<string, Homework[]>, h) => {
+              const sId = h.targetStudentIds![0]
+              if (!acc[sId]) acc[sId] = []
+              acc[sId].push(h)
+              return acc
+            },
+            {},
+          )
 
-                  return (
-                    <div
-                      key={studentId}
-                      className="bg-white rounded-lg shadow-sm border border-indigo-200 overflow-hidden mb-4"
-                    >
-                      {/* Level 1: Student Accordion */}
-                      <details className="group/student">
-                        <summary className="flex justify-between items-center p-4 cursor-pointer bg-white hover:bg-indigo-50 transition-colors select-none">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-lg ${isStudentAllDone ? 'bg-green-500' : 'bg-indigo-600'}`}
-                            >
-                              {isStudentAllDone ? (
-                                <i className="fas fa-check-double"></i>
-                              ) : (
-                                <i className="fas fa-user-graduate"></i>
-                              )}
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-gray-800 text-xl">
-                                {studentName}
-                              </h4>
-                              <div className="text-sm text-indigo-600 font-medium">
-                                {activeGroupsCount} Ödev Grubu Bekliyor
+          // Filter by search term
+          const filteredStudentIds = Object.keys(byStudent).filter((sId) => {
+            if (!homeworkSearchTerm) return true
+            const st = students.find((s) => s.id === sId)
+            if (!st) return false
+            return (
+              turkishSearch(st.name, homeworkSearchTerm) ||
+              turkishSearch(st.parentName, homeworkSearchTerm)
+            )
+          })
+
+          // Group student IDs by their bookDay
+          const DAY_ORDER = [
+            { code: 'PAZARTESI', label: 'Pazartesi', headerCls: 'bg-purple-50 border-l-4 border-purple-400 text-purple-800', dotCls: 'bg-purple-500', bgOpen: 'bg-purple-50/20' },
+            { code: 'SALI',      label: 'Salı',      headerCls: 'bg-blue-50 border-l-4 border-blue-400 text-blue-800',    dotCls: 'bg-blue-500',    bgOpen: 'bg-blue-50/20' },
+            { code: 'CARSAMBA',  label: 'Çarşamba',  headerCls: 'bg-teal-50 border-l-4 border-teal-400 text-teal-800',    dotCls: 'bg-teal-500',    bgOpen: 'bg-teal-50/20' },
+            { code: 'PERSEMBE',  label: 'Perşembe',  headerCls: 'bg-orange-50 border-l-4 border-orange-400 text-orange-800', dotCls: 'bg-orange-500', bgOpen: 'bg-orange-50/20' },
+            { code: 'CUMA',      label: 'Cuma',      headerCls: 'bg-pink-50 border-l-4 border-pink-400 text-pink-800',    dotCls: 'bg-pink-500',    bgOpen: 'bg-pink-50/20' },
+            { code: '',          label: 'Gün Atanmamış', headerCls: 'bg-gray-50 border-l-4 border-gray-400 text-gray-600', dotCls: 'bg-gray-400',   bgOpen: 'bg-gray-50/20' },
+          ]
+
+          const dayGroups = DAY_ORDER.map((day) => ({
+            ...day,
+            studentIds: filteredStudentIds.filter((sId) => {
+              const s = students.find((st) => st.id === sId)
+              return day.code === '' ? !s?.bookDay : s?.bookDay === day.code
+            }),
+          })).filter((g) => g.studentIds.length > 0)
+
+          if (dayGroups.length === 0) {
+            return (
+              <div className="text-center py-8 text-gray-400 italic">
+                Arama sonucu bulunamadı.
+              </div>
+            )
+          }
+
+          // Render a single student's homework card (Level 1+)
+          const renderStudentCard = (studentId: string) => {
+            const studentAllHomeworks = byStudent[studentId]
+            const student = students.find((s) => s.id === studentId)
+            const studentName = student?.name || 'Bilinmeyen Öğrenci'
+
+            const studentGroups = studentAllHomeworks.reduce(
+              (acc: Record<string, Homework[]>, h) => {
+                if (!acc[h.groupId!]) acc[h.groupId!] = []
+                acc[h.groupId!].push(h)
+                return acc
+              },
+              {},
+            )
+
+            const activeGroupsCount = Object.keys(studentGroups).length
+            const isStudentAllDone = studentAllHomeworks.every(
+              (h) => h.submissions[studentId] === HomeworkStatus.DONE,
+            )
+
+            return (
+              <div
+                key={studentId}
+                className="bg-white rounded-lg shadow-sm border border-indigo-200 overflow-hidden"
+              >
+                <details className="group/student">
+                  <summary className="flex justify-between items-center p-4 cursor-pointer bg-white hover:bg-indigo-50 transition-colors select-none">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-lg ${isStudentAllDone ? 'bg-green-500' : 'bg-indigo-600'}`}>
+                        {isStudentAllDone ? (
+                          <i className="fas fa-check-double"></i>
+                        ) : (
+                          <i className="fas fa-user-graduate"></i>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-800 text-xl">{studentName}</h4>
+                        <div className="text-sm text-indigo-600 font-medium">
+                          {activeGroupsCount} Ödev Grubu Bekliyor
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-gray-400 group-open/student:rotate-180 transition-transform duration-200">
+                      <i className="fas fa-chevron-down text-xl"></i>
+                    </span>
+                  </summary>
+
+                  <div className="p-4 bg-indigo-50/50 space-y-4 border-t border-indigo-100">
+                    {Object.entries(studentGroups).map(([groupId, group]) => {
+                      const first = group[0]
+                      const assignedDate = new Date(first.assignedDate).toLocaleDateString('tr-TR')
+                      const dueDateStr = new Date(first.dueDate).toLocaleDateString('tr-TR')
+                      const groupTitle = `${assignedDate} - ${dueDateStr} Ödevleri`
+                      const isGroupDone = group.every((h) => h.submissions[studentId] === HomeworkStatus.DONE)
+                      const groupKey = `group-${studentId}-${groupId}`
+                      const isSent = sentMessages.has(groupKey)
+
+                      return (
+                        <div key={groupId} className="bg-white rounded-lg border border-indigo-100 shadow-sm overflow-hidden">
+                          <details className="group/homework" open>
+                            <summary className="flex justify-between items-center p-3 cursor-pointer bg-white hover:bg-gray-50 transition-colors select-none border-b border-gray-100">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-2 h-2 rounded-full ${isGroupDone ? 'bg-green-500' : 'bg-orange-400'}`}></div>
+                                <span className="font-semibold text-gray-700">{groupTitle}</span>
+                                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{group.length} Ders</span>
                               </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-400 group-open/student:rotate-180 transition-transform duration-200">
-                              <i className="fas fa-chevron-down text-xl"></i>
-                            </span>
-                          </div>
-                        </summary>
-
-                        {/* Level 1 Content: List of Groups */}
-                        <div className="p-4 bg-indigo-50/50 space-y-4 border-t border-indigo-100">
-                          {Object.entries(studentGroups).map(
-                            ([groupId, group]) => {
-                              const first = group[0]
-                              const assignedDate = new Date(
-                                first.assignedDate,
-                              ).toLocaleDateString('tr-TR')
-                              const dueDate = new Date(
-                                first.dueDate,
-                              ).toLocaleDateString('tr-TR')
-                              const groupTitle = `${assignedDate} - ${dueDate} Ödevleri`
-
-                              const isGroupDone = group.every(
-                                (h) =>
-                                  h.submissions[studentId] ===
-                                  HomeworkStatus.DONE,
-                              )
-
-                              return (
-                                <div
-                                  key={groupId}
-                                  className="bg-white rounded-lg border border-indigo-100 shadow-sm overflow-hidden"
+                              <div className="flex items-center gap-3">
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    const homeworkItems = group.map((h) => ({
+                                      subject: h.subject || 'GENEL',
+                                      description: h.description,
+                                      status: h.submissions[studentId] || HomeworkStatus.PENDING,
+                                    }))
+                                    const message = generateCombinedParentMessage(studentName, homeworkItems, first.assignedDate, first.dueDate)
+                                    const encodedMessage = encodeURIComponent(message)
+                                    const phone = student?.parentPhone?.startsWith('9') ? student.parentPhone : `9${student?.parentPhone || ''}`
+                                    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank')
+                                    setSentMessages(new Set([...sentMessages, groupKey]))
+                                  }}
+                                  className={`${isSent ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'} text-white px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1`}
                                 >
-                                  {/* Level 2: Homework Group Accordion */}
-                                  <details className="group/homework" open>
-                                    <summary className="flex justify-between items-center p-3 cursor-pointer bg-white hover:bg-gray-50 transition-colors select-none border-b border-gray-100">
-                                      <div className="flex items-center gap-3">
-                                        <div
-                                          className={`w-2 h-2 rounded-full ${isGroupDone ? 'bg-green-500' : 'bg-orange-400'}`}
-                                        ></div>
-                                        <span className="font-semibold text-gray-700">
-                                          {groupTitle}
-                                        </span>
-                                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                                          {group.length} Ders
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center gap-3">
-                                        {(() => {
-                                          const groupKey = `group-${studentId}-${groupId}`
-                                          const isSent =
-                                            sentMessages.has(groupKey)
+                                  <i className="fab fa-whatsapp"></i>
+                                  {isSent ? 'Tekrar Bildir' : 'Toplu Bildir'}
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    if (window.confirm('Bu ödev grubunu tamamen silmek istediğinize emin misiniz?')) {
+                                      group.forEach((h) => onDelete(h.id))
+                                      toast.success('Ödev grubu silindi')
+                                    }
+                                  }}
+                                  className="text-gray-400 hover:text-red-600 transition-colors"
+                                  title="Grubu Sil"
+                                >
+                                  <i className="fas fa-trash-alt"></i>
+                                </button>
+                                <span className="text-gray-400 group-open/homework:rotate-180 transition-transform duration-200">
+                                  <i className="fas fa-chevron-down"></i>
+                                </span>
+                              </div>
+                            </summary>
 
-                                          return (
-                                            <button
-                                              onClick={(e) => {
-                                                e.preventDefault()
-                                                // Gather all homework statuses for this student's group
-                                                const homeworkItems = group.map(
-                                                  (h) => ({
-                                                    subject:
-                                                      h.subject || 'GENEL',
-                                                    description: h.description,
-                                                    status:
-                                                      h.submissions[
-                                                        studentId
-                                                      ] ||
-                                                      HomeworkStatus.PENDING,
-                                                  }),
-                                                )
+                            <div className="p-3 space-y-2 bg-gray-50/50">
+                              {group.map((h) => {
+                                const status = h.submissions[studentId] || HomeworkStatus.PENDING
+                                return (
+                                  <div key={h.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded bg-white border border-gray-100 hover:shadow-sm transition-all">
+                                    <div className="flex items-start gap-3 flex-1">
+                                      <span className={`text-[10px] px-2 py-1 rounded font-bold shrink-0 mt-1 ${h.subject === 'TURKCE' ? 'bg-red-100 text-red-700' : h.subject === 'MATEMATIK' ? 'bg-blue-100 text-blue-700' : h.subject === 'FEN' ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                                        {h.subject === 'TURKCE' ? 'TR' : h.subject === 'MATEMATIK' ? 'MAT' : h.subject === 'FEN' ? 'FEN' : h.subject || 'GENEL'}
+                                      </span>
+                                      <div className="text-sm font-medium text-gray-700">{h.description}</div>
+                                    </div>
 
-                                                const message =
-                                                  generateCombinedParentMessage(
-                                                    studentName,
-                                                    homeworkItems,
-                                                    first.assignedDate,
-                                                    first.dueDate,
-                                                  )
-
-                                                const encodedMessage =
-                                                  encodeURIComponent(message)
-                                                const phone =
-                                                  student?.parentPhone?.startsWith(
-                                                    '9',
-                                                  )
-                                                    ? student.parentPhone
-                                                    : `9${student?.parentPhone || ''}`
-                                                const url = `https://wa.me/${phone}?text=${encodedMessage}`
-                                                window.open(url, '_blank')
-
-                                                // Mark as sent
-                                                setSentMessages(
-                                                  new Set([
-                                                    ...sentMessages,
-                                                    groupKey,
-                                                  ]),
-                                                )
-                                              }}
-                                              className={`${
-                                                isSent
-                                                  ? 'bg-orange-500 hover:bg-orange-600'
-                                                  : 'bg-green-500 hover:bg-green-600'
-                                              } text-white px-3 py-1 rounded-full text-xs font-bold transition flex items-center gap-1`}
-                                            >
-                                              <i className="fab fa-whatsapp"></i>
-                                              {isSent
-                                                ? 'Tekrar Bildir'
-                                                : 'Toplu Bildir'}
-                                            </button>
-                                          )
-                                        })()}
-                                        <button
-                                          onClick={(e) => {
-                                            e.preventDefault() // Prevent accordion toggle
-                                            if (
-                                              window.confirm(
-                                                'Bu ödev grubunu tamamen silmek istediğinize emin misiniz?',
-                                              )
-                                            ) {
-                                              group.forEach((h) =>
-                                                onDelete(h.id),
-                                              )
-                                              toast.success(
-                                                'Ödev grubu silindi',
-                                              )
-                                            }
-                                          }}
-                                          className="text-gray-400 hover:text-red-600 transition-colors"
-                                          title="Grubu Sil"
-                                        >
-                                          <i className="fas fa-trash-alt"></i>
-                                        </button>
-                                        <span className="text-gray-400 group-open/homework:rotate-180 transition-transform duration-200">
-                                          <i className="fas fa-chevron-down"></i>
-                                        </span>
-                                      </div>
-                                    </summary>
-
-                                    {/* Level 3 Content: Homework Items */}
-                                    <div className="p-3 space-y-2 bg-gray-50/50">
-                                      {group.map((h) => {
-                                        const status =
-                                          h.submissions[studentId] ||
-                                          HomeworkStatus.PENDING
-
+                                    <div className="flex gap-1 shrink-0">
+                                      {[
+                                        { s: HomeworkStatus.DONE,       icon: 'check',       color: 'green',  label: 'Yapıldı' },
+                                        { s: HomeworkStatus.MISSING,    icon: 'times',       color: 'red',    label: 'Yapılmadı' },
+                                        { s: HomeworkStatus.INCOMPLETE, icon: 'exclamation', color: 'yellow', label: 'Eksik' },
+                                        { s: HomeworkStatus.ABSENT,     icon: 'briefcase',   color: 'violet', label: 'Getirmedi' },
+                                      ].map((btn) => {
+                                        const isActive = status === btn.s
+                                        let activeClass = ''
+                                        let inactiveClass = ''
+                                        if (btn.color === 'yellow') {
+                                          activeClass = 'bg-orange-500 text-white shadow-md scale-110'
+                                          inactiveClass = 'bg-white border border-gray-200 text-gray-400 hover:border-orange-300 hover:text-orange-500'
+                                        } else if (btn.color === 'violet') {
+                                          activeClass = 'bg-purple-600 text-white shadow-md scale-110'
+                                          inactiveClass = 'bg-white border border-gray-200 text-gray-400 hover:border-purple-300 hover:text-purple-500'
+                                        } else {
+                                          activeClass = `bg-${btn.color}-500 text-white shadow-md scale-110`
+                                          inactiveClass = `bg-white border border-gray-200 text-gray-400 hover:border-${btn.color}-300 hover:text-${btn.color}-500`
+                                        }
                                         return (
-                                          <div
-                                            key={h.id}
-                                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded bg-white border border-gray-100 hover:shadow-sm transition-all"
+                                          <button
+                                            key={btn.s}
+                                            onClick={() => {
+                                              const newStatus = isActive ? HomeworkStatus.PENDING : btn.s
+                                              onUpdateStatus(h.id, studentId, newStatus)
+                                            }}
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isActive ? activeClass : inactiveClass}`}
+                                            title={btn.label}
                                           >
-                                            <div className="flex items-start gap-3 flex-1">
-                                              <span
-                                                className={`text-[10px] px-2 py-1 rounded font-bold shrink-0 mt-1 ${
-                                                  h.subject === 'TURKCE'
-                                                    ? 'bg-red-100 text-red-700'
-                                                    : h.subject === 'MATEMATIK'
-                                                      ? 'bg-blue-100 text-blue-700'
-                                                      : h.subject === 'FEN'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-indigo-100 text-indigo-700'
-                                                }`}
-                                              >
-                                                {h.subject === 'TURKCE'
-                                                  ? 'TR'
-                                                  : h.subject === 'MATEMATIK'
-                                                    ? 'MAT'
-                                                    : h.subject === 'FEN'
-                                                      ? 'FEN'
-                                                      : h.subject || 'GENEL'}
-                                              </span>
-                                              <div className="text-sm font-medium text-gray-700">
-                                                {h.description}
-                                              </div>
-                                            </div>
-
-                                            {/* Controls */}
-                                            <div className="flex gap-1 shrink-0">
-                                              {[
-                                                {
-                                                  s: HomeworkStatus.DONE,
-                                                  icon: 'check',
-                                                  color: 'green',
-                                                  label: 'Yapıldı',
-                                                },
-                                                {
-                                                  s: HomeworkStatus.MISSING,
-                                                  icon: 'times',
-                                                  color: 'red',
-                                                  label: 'Yapılmadı',
-                                                },
-                                                {
-                                                  s: HomeworkStatus.INCOMPLETE,
-                                                  icon: 'exclamation',
-                                                  color: 'yellow',
-                                                  label: 'Eksik',
-                                                },
-                                                {
-                                                  s: HomeworkStatus.ABSENT,
-                                                  icon: 'briefcase',
-                                                  color: 'violet',
-                                                  label: 'Getirmedi',
-                                                },
-                                              ].map((btn) => {
-                                                const isActive =
-                                                  status === btn.s
-                                                let activeClass = ''
-                                                let inactiveClass = ''
-
-                                                if (btn.color === 'yellow') {
-                                                  activeClass =
-                                                    'bg-orange-500 text-white shadow-md scale-110'
-                                                  inactiveClass =
-                                                    'bg-white border border-gray-200 text-gray-400 hover:border-orange-300 hover:text-orange-500'
-                                                } else if (
-                                                  btn.color === 'violet'
-                                                ) {
-                                                  activeClass =
-                                                    'bg-purple-600 text-white shadow-md scale-110'
-                                                  inactiveClass =
-                                                    'bg-white border border-gray-200 text-gray-400 hover:border-purple-300 hover:text-purple-500'
-                                                } else {
-                                                  activeClass = `bg-${btn.color}-500 text-white shadow-md scale-110`
-                                                  inactiveClass = `bg-white border border-gray-200 text-gray-400 hover:border-${btn.color}-300 hover:text-${btn.color}-500`
-                                                }
-
-                                                return (
-                                                  <button
-                                                    key={btn.s}
-                                                    onClick={() => {
-                                                      const newStatus = isActive
-                                                        ? HomeworkStatus.PENDING
-                                                        : btn.s
-                                                      onUpdateStatus(
-                                                        h.id,
-                                                        studentId,
-                                                        newStatus,
-                                                      )
-                                                    }}
-                                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                                                      isActive
-                                                        ? activeClass
-                                                        : inactiveClass
-                                                    }`}
-                                                    title={btn.label}
-                                                  >
-                                                    <i
-                                                      className={`fas fa-${btn.icon}`}
-                                                    ></i>
-                                                  </button>
-                                                )
-                                              })}
-
-                                              {/* WhatsApp Button */}
-                                              <button
-                                                onClick={async () => {
-                                                  if (
-                                                    sentMessages.has(
-                                                      `${h.id}-${studentId}`,
-                                                    )
-                                                  )
-                                                    return
-
-                                                  const msg =
-                                                    await generateParentMessage(
-                                                      studentName,
-                                                      h.title,
-                                                      status || 'PENDING',
-                                                      undefined, // schoolName
-                                                      undefined, // teacherStatus
-                                                      undefined, // userName
-                                                      undefined, // isRenotify
-                                                      h.assignedDate,
-                                                      h.dueDate,
-                                                      h.subject, // Added
-                                                      h.description, // Added
-                                                    )
-
-                                                  if (student?.parentPhone) {
-                                                    // Format phone: remove all non-digits
-                                                    let phone =
-                                                      student.parentPhone.replace(
-                                                        /\D/g,
-                                                        '',
-                                                      )
-                                                    // If starts with 0, remove it
-                                                    if (phone.startsWith('0'))
-                                                      phone = phone.substring(1)
-                                                    // If valid turkish number (10 digits), add 90
-                                                    if (phone.length === 10)
-                                                      phone = '90' + phone
-
-                                                    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
-                                                    window.open(url, '_blank')
-
-                                                    // Mark as sent
-                                                    const newSet = new Set(
-                                                      sentMessages,
-                                                    )
-                                                    newSet.add(
-                                                      `${h.id}-${studentId}`,
-                                                    )
-                                                    setSentMessages(newSet)
-
-                                                    toast.success(
-                                                      'WhatsApp açılıyor... 🟢',
-                                                    )
-                                                  } else {
-                                                    // Fallback to copy if no phone
-                                                    navigator.clipboard.writeText(
-                                                      msg,
-                                                    )
-                                                    toast.success(
-                                                      'Telefon no bulunamadı, mesaj kopyalandı! 📋',
-                                                    )
-                                                  }
-                                                }}
-                                                disabled={sentMessages.has(
-                                                  `${h.id}-${studentId}`,
-                                                )}
-                                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ml-1 border ${
-                                                  sentMessages.has(
-                                                    `${h.id}-${studentId}`,
-                                                  )
-                                                    ? 'bg-green-100 border-green-300 text-green-700 cursor-default'
-                                                    : 'bg-green-50 border-green-200 text-green-600 hover:bg-green-100 hover:text-green-700'
-                                                }`}
-                                                title={
-                                                  sentMessages.has(
-                                                    `${h.id}-${studentId}`,
-                                                  )
-                                                    ? 'Mesaj Gönderildi'
-                                                    : 'WhatsApp ile Gönder'
-                                                }
-                                              >
-                                                {sentMessages.has(
-                                                  `${h.id}-${studentId}`,
-                                                ) ? (
-                                                  <i className="fas fa-check text-sm"></i>
-                                                ) : (
-                                                  <i className="fab fa-whatsapp text-lg"></i>
-                                                )}
-                                              </button>
-
-                                              <div className="w-px h-6 bg-gray-200 mx-1 self-center"></div>
-                                              <button
-                                                onClick={() => handleEdit(h)}
-                                                className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-indigo-600 flex items-center justify-center"
-                                              >
-                                                <i className="fas fa-edit text-xs"></i>
-                                              </button>
-                                            </div>
-                                          </div>
+                                            <i className={`fas fa-${btn.icon}`}></i>
+                                          </button>
                                         )
                                       })}
+
+                                      <button
+                                        onClick={async () => {
+                                          if (sentMessages.has(`${h.id}-${studentId}`)) return
+                                          const msg = await generateParentMessage(studentName, h.title, status || 'PENDING', undefined, undefined, undefined, undefined, h.assignedDate, h.dueDate, h.subject, h.description)
+                                          if (student?.parentPhone) {
+                                            let phone = student.parentPhone.replace(/\D/g, '')
+                                            if (phone.startsWith('0')) phone = phone.substring(1)
+                                            if (phone.length === 10) phone = '90' + phone
+                                            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
+                                            const newSet = new Set(sentMessages)
+                                            newSet.add(`${h.id}-${studentId}`)
+                                            setSentMessages(newSet)
+                                            toast.success('WhatsApp açılıyor... 🟢')
+                                          } else {
+                                            navigator.clipboard.writeText(msg)
+                                            toast.success('Telefon no bulunamadı, mesaj kopyalandı! 📋')
+                                          }
+                                        }}
+                                        disabled={sentMessages.has(`${h.id}-${studentId}`)}
+                                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ml-1 border ${sentMessages.has(`${h.id}-${studentId}`) ? 'bg-green-100 border-green-300 text-green-700 cursor-default' : 'bg-green-50 border-green-200 text-green-600 hover:bg-green-100 hover:text-green-700'}`}
+                                        title={sentMessages.has(`${h.id}-${studentId}`) ? 'Mesaj Gönderildi' : 'WhatsApp ile Gönder'}
+                                      >
+                                        {sentMessages.has(`${h.id}-${studentId}`) ? (
+                                          <i className="fas fa-check text-sm"></i>
+                                        ) : (
+                                          <i className="fab fa-whatsapp text-lg"></i>
+                                        )}
+                                      </button>
+
+                                      <div className="w-px h-6 bg-gray-200 mx-1 self-center"></div>
+                                      <button
+                                        onClick={() => handleEdit(h)}
+                                        className="w-8 h-8 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-indigo-600 flex items-center justify-center"
+                                      >
+                                        <i className="fas fa-edit text-xs"></i>
+                                      </button>
                                     </div>
-                                  </details>
-                                </div>
-                              )
-                            },
-                          )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </details>
                         </div>
-                      </details>
-                    </div>
-                  )
-                })}
+                      )
+                    })}
+                  </div>
+                </details>
+              </div>
+            )
+          }
+
+          return (
+            <div className="space-y-3">
+              {dayGroups.map((dayGroup) => {
+                const isOpen = openDays.includes(dayGroup.code)
+                return (
+                  <div key={dayGroup.code || 'none'} className={`rounded-xl border-2 overflow-hidden shadow-sm ${dayGroup.headerCls.includes('purple') ? 'border-purple-200' : dayGroup.headerCls.includes('blue') ? 'border-blue-200' : dayGroup.headerCls.includes('teal') ? 'border-teal-200' : dayGroup.headerCls.includes('orange') ? 'border-orange-200' : dayGroup.headerCls.includes('pink') ? 'border-pink-200' : 'border-gray-200'}`}>
+                    <button
+                      type="button"
+                      onClick={() => toggleDay(dayGroup.code)}
+                      className={`w-full flex items-center justify-between px-5 py-3 text-left ${dayGroup.headerCls} transition-colors`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`w-3 h-3 rounded-full ${dayGroup.dotCls}`}></span>
+                        <span className="font-extrabold text-base">{dayGroup.label}</span>
+                        <span className="text-xs font-medium opacity-60 bg-white/60 px-2 py-0.5 rounded-full">
+                          {dayGroup.studentIds.length} öğrenci
+                        </span>
+                      </div>
+                      <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'} opacity-60`}></i>
+                    </button>
+
+                    {isOpen && (
+                      <div className={`${dayGroup.bgOpen} p-3 space-y-3`}>
+                        {dayGroup.studentIds.map((sId) => renderStudentCard(sId))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
 
               {/* Ungrouped Homeworks */}
               {homeworks
@@ -1284,80 +1311,28 @@ const HomeworkManager: React.FC<Props> = ({
                       turkishSearch(h.description, homeworkSearchTerm)),
                 )
                 .map((h) => (
-                  <div
-                    key={h.id}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow"
-                  >
+                  <div key={h.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-semibold text-lg text-gray-900">
-                          {h.title}
-                        </h4>
+                        <h4 className="font-semibold text-lg text-gray-900">{h.title}</h4>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded font-bold ${
-                              h.subject === 'TURKCE'
-                                ? 'bg-red-100 text-red-700'
-                                : h.subject === 'MATEMATIK'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : h.subject === 'FEN'
-                                    ? 'bg-green-100 text-green-700'
-                                    : 'bg-indigo-100 text-indigo-700'
-                            }`}
-                          >
-                            {h.subject === 'TURKCE'
-                              ? 'TÜRKÇE'
-                              : h.subject === 'MATEMATIK'
-                                ? 'MATEMATİK'
-                                : h.subject === 'FEN'
-                                  ? 'FEN'
-                                  : h.subject || 'GENEL'}
+                          <span className={`text-xs px-2 py-0.5 rounded font-bold ${h.subject === 'TURKCE' ? 'bg-red-100 text-red-700' : h.subject === 'MATEMATIK' ? 'bg-blue-100 text-blue-700' : h.subject === 'FEN' ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                            {h.subject === 'TURKCE' ? 'TÜRKÇE' : h.subject === 'MATEMATIK' ? 'MATEMATİK' : h.subject === 'FEN' ? 'FEN' : h.subject || 'GENEL'}
                           </span>
                           {h.targetClasses.map((cls) => (
-                            <span
-                              key={cls}
-                              className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded"
-                            >
-                              {cls}
-                            </span>
+                            <span key={cls} className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">{cls}</span>
                           ))}
-                          {h.targetStudentIds &&
-                            h.targetStudentIds.length > 0 && (
-                              <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">
-                                {h.targetStudentIds.length} Öğrenci
-                              </span>
-                            )}
                         </div>
-                        <p className="text-gray-600 mt-2 text-sm line-clamp-2">
-                          {h.description}
-                        </p>
-                        <div className="text-xs text-gray-500 mt-2">
-                          Son Teslim:{' '}
-                          {new Date(h.dueDate).toLocaleDateString('tr-TR')}
-                        </div>
+                        <p className="text-gray-600 mt-2 text-sm line-clamp-2">{h.description}</p>
+                        <div className="text-xs text-gray-500 mt-2">Son Teslim: {new Date(h.dueDate).toLocaleDateString('tr-TR')}</div>
                       </div>
                       <div className="flex flex-col gap-2">
-                        <button
-                          onClick={() => setAnalyzingHomeworkIds([h.id])} // Single HW analysis
-                          className="text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors"
-                          title="Analiz Et"
-                        >
-                          <i className="fas fa-chart-pie text-xl"></i>
-                        </button>
-                        <button
-                          onClick={() => handleEdit(h)}
-                          className="text-gray-400 hover:text-indigo-600 hover:bg-gray-50 p-2 rounded transition-colors"
-                          title="Düzenle"
-                        >
+                        <button onClick={() => handleEdit(h)} className="text-gray-400 hover:text-indigo-600 hover:bg-gray-50 p-2 rounded transition-colors" title="Düzenle">
                           <i className="fas fa-edit"></i>
                         </button>
                         <button
                           onClick={() => {
-                            if (
-                              window.confirm(
-                                'Bu ödevi silmek istediğinize emin misiniz?',
-                              )
-                            ) {
+                            if (window.confirm('Bu ödevi silmek istediğinize emin misiniz?')) {
                               onDelete(h.id)
                               toast.success('Ödev silindi 🗑️')
                             }
@@ -1371,9 +1346,10 @@ const HomeworkManager: React.FC<Props> = ({
                     </div>
                   </div>
                 ))}
-            </>
-          )}
-        </div>
+            </div>
+          )
+        })()}
+
       </div>
 
       <PersonalizedHomeworkModal
@@ -1381,6 +1357,12 @@ const HomeworkManager: React.FC<Props> = ({
         onClose={() => setShowPersonalizedModal(false)}
         students={students}
         onAdd={handlePersonalizedAdd}
+      />
+      <WeeklyHomeworkModal
+        isOpen={showWeeklyModal}
+        onClose={() => setShowWeeklyModal(false)}
+        students={students}
+        onAdd={handleWeeklyAdd}
       />
     </div>
   )

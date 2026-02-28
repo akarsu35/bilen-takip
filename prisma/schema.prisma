@@ -15,6 +15,7 @@ model Student {
   parentName  String
   parentPhone String
   className   String
+  bookDay     String? // 'PAZARTESI', 'SALI', 'CARSAMBA', 'PERSEMBE', 'CUMA'
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   submissions Submission[]
